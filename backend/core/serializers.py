@@ -4,6 +4,8 @@ Core serializers - Authentication.
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 User = get_user_model()
 
@@ -29,6 +31,20 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
+        
+        # Apply Django password validators
+        # Build a candidate user object for similarity validator
+        candidate_user = User(
+            username=attrs['username'],
+            email=attrs['email'],
+            first_name=attrs.get('first_name', ''),
+            last_name=attrs.get('last_name', ''),
+        )
+        try:
+            validate_password(attrs['password'], candidate_user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({'password': list(e.messages)})
+        
         return attrs
 
     def create(self, validated_data):
