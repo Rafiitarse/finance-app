@@ -69,11 +69,7 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     """Serializer for Transaction model."""
     category = CategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(),
-        source='category',
-        write_only=True
-    )
+    category_id = serializers.IntegerField(source='category.id', read_only=True)
     type = serializers.CharField(source='category.type', read_only=True)
 
     class Meta:
@@ -83,7 +79,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'amount', 'description', 'date',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'category_id', 'created_at', 'updated_at']
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):

@@ -59,6 +59,28 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        """Create and return the full object using the read serializer."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        # Re-fetch with annotations and serialize with read serializer
+        instance = self.get_queryset().get(pk=serializer.instance.pk)
+        read_serializer = CategorySerializer(instance, context={'request': request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        """Update and return the full object using the read serializer."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        # Re-fetch with annotations and serialize with read serializer
+        instance = self.get_queryset().get(pk=instance.pk)
+        read_serializer = CategorySerializer(instance, context={'request': request})
+        return Response(read_serializer.data)
+
     def get_permissions(self):
         if self.action in ['destroy', 'update', 'partial_update']:
             return [permissions.IsAuthenticated(), IsOwner()]
@@ -146,6 +168,28 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Create and return the full object using the read serializer."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        # Re-fetch with select_related and serialize with read serializer
+        instance = self.get_queryset().get(pk=serializer.instance.pk)
+        read_serializer = TransactionSerializer(instance, context={'request': request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        """Update and return the full object using the read serializer."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        # Re-fetch with select_related and serialize with read serializer
+        instance = self.get_queryset().get(pk=instance.pk)
+        read_serializer = TransactionSerializer(instance, context={'request': request})
+        return Response(read_serializer.data)
 
     @action(detail=False, methods=['get'])
     def summary(self, request):
