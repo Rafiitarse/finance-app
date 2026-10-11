@@ -7,7 +7,7 @@ import os
 # IMPORTANT: Set these BEFORE importing from .settings
 # Phase 3 makes settings.py raise ImproperlyConfigured when these are missing,
 # and that import happens before any override, so setting them afterwards would be too late.
-os.environ.setdefault('SECRET_KEY', 'django-insecure-test-key-for-testing-only-do-not-use-in-production-abcdefghijklmnopqrstuvwxyz')
+os.environ.setdefault('SECRET_KEY', 'test-only-key-for-testing-only-do-not-use-in-production-abcdefghijklmnopqrstuvwxyz')
 os.environ.setdefault('DEBUG', '0')
 os.environ.setdefault('ALLOWED_HOSTS', 'testserver,localhost')
 
