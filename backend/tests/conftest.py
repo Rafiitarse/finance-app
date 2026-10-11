@@ -39,12 +39,14 @@ def auth_client(api_client, user):
 
 
 @pytest.fixture
-def other_user_client(api_client, other_user):
+def other_user_client(other_user):
     """Authenticated API client for another user."""
+    from rest_framework.test import APIClient
     from rest_framework_simplejwt.tokens import RefreshToken
+    client = APIClient()
     refresh = RefreshToken.for_user(other_user)
-    api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
-    return api_client
+    client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+    return client
 
 
 @pytest.fixture

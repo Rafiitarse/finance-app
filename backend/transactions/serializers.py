@@ -2,6 +2,7 @@
 Transactions serializers.
 """
 from rest_framework import serializers
+from django.db.models import Q
 from .models import Category, Transaction
 
 
@@ -26,6 +27,38 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['name', 'type', 'icon', 'color']
+
+    def validate(self, attrs):
+        """Validate that category name + type combination is unique for user or default."""
+        name = attrs.get('name', '').strip()
+        category_type = attrs.get('type')
+        
+        if not name or not category_type:
+            return attrs
+        
+        attrs['name'] = name
+        
+        user = self.context['request'].user
+        
+        # Build query for existing categories with same name (case-insensitive) and type
+        # that belong to the current user or are default categories
+        # Note: The model constraint is (user, name, type), so different users CAN have same name+type
+        queryset = Category.objects.filter(
+            Q(user=user) | Q(is_default=True),
+            name__iexact=name,
+            type=category_type
+        )
+        
+        # Exclude the instance being updated (for PATCH)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        
+        if queryset.exists():
+            raise serializers.ValidationError({
+                'name': ['A category with this name and type already exists.']
+            })
+        
+        return attrs
 
 
 class TransactionSerializer(serializers.ModelSerializer):
