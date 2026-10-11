@@ -4,6 +4,7 @@ Transactions views - Category & Transaction CRUD + Summaries.
 from datetime import date
 from decimal import Decimal
 from django.db.models import Sum, Count, Q
+from django.db.models import ProtectedError
 from django.utils import timezone
 from rest_framework import viewsets, status, filters, permissions
 from rest_framework.decorators import action
@@ -62,6 +63,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
         if self.action in ['destroy', 'update', 'partial_update']:
             return [permissions.IsAuthenticated(), IsOwner()]
         return [permissions.IsAuthenticated()]
+
+    def destroy(self, request, *args, **kwargs):
+        """Override destroy to catch ProtectedError when category has transactions."""
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+        except ProtectedError:
+            return Response(
+                {'detail': 'Category is used by existing transactions and cannot be deleted.'},
+                status=status.HTTP_409_CONFLICT
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
     def summary(self, request):
