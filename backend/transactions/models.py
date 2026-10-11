@@ -3,6 +3,8 @@ Transactions models - Category & Transaction.
 """
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 
 class Category(models.Model):
@@ -59,7 +61,7 @@ class Transaction(models.Model):
         on_delete=models.PROTECT,
         related_name='transactions'
     )
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    amount = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     description = models.TextField(blank=True)
     date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)

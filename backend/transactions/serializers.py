@@ -3,6 +3,7 @@ Transactions serializers.
 """
 from rest_framework import serializers
 from django.db.models import Q
+from decimal import Decimal
 from .models import Category, Transaction
 
 
@@ -101,6 +102,12 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Invalid category.')
         return value
 
+    def validate_amount(self, value):
+        """Ensure amount is positive (>= 0.01)."""
+        if value < Decimal('0.01'):
+            raise serializers.ValidationError('Amount must be at least 0.01.')
+        return value
+
 
 class TransactionUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating Transaction."""
@@ -119,6 +126,12 @@ class TransactionUpdateSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         if value.user is not None and value.user != user:
             raise serializers.ValidationError('Invalid category.')
+        return value
+
+    def validate_amount(self, value):
+        """Ensure amount is positive (>= 0.01)."""
+        if value < Decimal('0.01'):
+            raise serializers.ValidationError('Amount must be at least 0.01.')
         return value
 
 
