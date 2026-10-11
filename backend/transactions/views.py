@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.db.models import Sum, Count, Q
 from django.db.models import ProtectedError
 from django.utils import timezone
-from rest_framework import viewsets, status, filters, permissions
+from rest_framework import viewsets, status, filters, permissions, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,6 +21,22 @@ from .serializers import (
     MonthlySummarySerializer,
     CategorySummarySerializer,
 )
+
+
+class SummaryQuerySerializer(serializers.Serializer):
+    """Serializer for summary query parameters."""
+    year = serializers.IntegerField(min_value=1970, max_value=2100, required=False)
+    month = serializers.IntegerField(min_value=1, max_value=12, required=False)
+
+
+def month_range(year: int, month: int) -> tuple[date, date]:
+    """Return (start_of_month, start_of_next_month) for the given year and month."""
+    start = date(year, month, 1)
+    if month == 12:
+        next_start = date(year + 1, 1, 1)
+    else:
+        next_start = date(year, month + 1, 1)
+    return start, next_start
 
 
 class IsOwner(permissions.BasePermission):
@@ -101,15 +117,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """Get category breakdown for current month."""
-        user = request.user
-        today = timezone.now().date()
-        start_of_month = today.replace(day=1)
+        # Validate query parameters
+        query_serializer = SummaryQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
         
-        # Get next month start
-        if today.month == 12:
-            next_month = today.replace(year=today.year + 1, month=1, day=1)
-        else:
-            next_month = today.replace(month=today.month + 1, day=1)
+        user = request.user
+        today = timezone.localdate()
+        
+        year = query_serializer.validated_data.get('year', today.year)
+        month = query_serializer.validated_data.get('month', today.month)
+        
+        start_of_month, next_month = month_range(year, month)
         
         # Aggregate expenses by category
         expenses = Transaction.objects.filter(
@@ -194,18 +212,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """Get monthly summary (income, expense, balance)."""
+        # Validate query parameters
+        query_serializer = SummaryQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        
         user = request.user
-        today = timezone.now().date()
+        today = timezone.localdate()
         
-        # Default to current month
-        year = int(request.query_params.get('year', today.year))
-        month = int(request.query_params.get('month', today.month))
+        year = query_serializer.validated_data.get('year', today.year)
+        month = query_serializer.validated_data.get('month', today.month)
         
-        start_of_month = date(year, month, 1)
-        if month == 12:
-            next_month = date(year + 1, 1, 1)
-        else:
-            next_month = date(year, month + 1, 1)
+        start_of_month, next_month = month_range(year, month)
         
         transactions = Transaction.objects.filter(
             user=user,
