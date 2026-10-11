@@ -30,8 +30,13 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validate that category name + type combination is unique for user or default."""
-        name = attrs.get('name', '').strip()
-        category_type = attrs.get('type')
+        # On PATCH, fall back to instance's current values for missing fields
+        if self.instance:
+            name = attrs.get('name', self.instance.name).strip()
+            category_type = attrs.get('type', self.instance.type)
+        else:
+            name = attrs.get('name', '').strip()
+            category_type = attrs.get('type')
         
         if not name or not category_type:
             return attrs
