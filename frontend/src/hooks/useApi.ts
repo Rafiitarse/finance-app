@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { authApi, categoriesApi, transactionsApi } from '@/lib/api';
 import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters } from '@/types';
 import { useAuthStore } from '@/lib/store';
@@ -64,14 +65,23 @@ export function useUser() {
     queryFn: () => authApi.me(),
     enabled: isAuthenticated && !user,
     retry: false,
-    onSuccess: (data) => setUser(data),
-    onError: () => {
-      setUser(null);
-      setLoading(false);
-    },
   });
 
-  return { user: user || data, isLoading: isLoading || user === null && isAuthenticated, error, refetch };
+  // Replace onSuccess/onError (removed in TanStack Query v5)
+  useEffect(() => {
+    if (data) {
+      setUser(data.data);
+    }
+  }, [data, setUser]);
+
+  useEffect(() => {
+    if (error) {
+      setUser(null);
+      setLoading(false);
+    }
+  }, [error, setUser, setLoading]);
+
+  return { user: user || data?.data, isLoading: isLoading || user === null && isAuthenticated, error, refetch };
 }
 
 // Category Hooks
