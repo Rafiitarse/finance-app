@@ -18,7 +18,10 @@ import { cn } from '@/lib/utils';
 
 const transactionSchema = z.object({
   category_id: z.number({ required_error: 'Kategori wajib dipilih' }),
-  amount: z.string().min(1, 'Jumlah wajib diisi').refine((val) => parseFloat(val) > 0, 'Jumlah harus lebih dari 0'),
+  amount: z.string()
+    .min(1, 'Jumlah wajib diisi')
+    .refine((val) => parseFloat(val) >= 0.01, 'Jumlah minimal 0.01')
+    .refine((val) => /^\d+(\.\d{1,2})?$/.test(val), 'Maksimal 2 desimal'),
   description: z.string().optional(),
   date: z.string().min(1, 'Tanggal wajib diisi'),
 });
@@ -46,6 +49,7 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
     handleSubmit,
     setValue,
     reset,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<TransactionFormSchema>({
     resolver: zodResolver(transactionSchema),
@@ -95,8 +99,15 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
       }
       onClose();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } };
-      toastError(err.response?.data?.detail || 'Terjadi kesalahan');
+      const err = error as { response?: { status?: number; data?: { detail?: string; amount?: string[] } } };
+      if (err.response?.status === 400 && err.response.data?.amount) {
+        const amountError = Array.isArray(err.response.data.amount)
+          ? err.response.data.amount.join(', ')
+          : err.response.data.amount;
+        setError('amount', { type: 'server', message: amountError });
+      } else {
+        toastError(err.response?.data?.detail || 'Terjadi kesalahan');
+      }
     }
   };
 
