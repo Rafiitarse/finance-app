@@ -81,3 +81,23 @@ export const TRANSACTION_TYPE_COLORS: Record<'income' | 'expense', string> = {
   income: 'text-income-600 bg-income-50',
   expense: 'text-expense-600 bg-expense-50',
 };
+
+/**
+ * Validates a callback URL to prevent open redirects.
+ * Only allows relative paths starting with a single '/', not '//' or '/\\'.
+ * Returns '/dashboard' for invalid or empty inputs.
+ */
+export function safeCallbackUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string') {
+    return '/dashboard';
+  }
+  // Must start with a single '/'
+  if (!url.startsWith('/')) {
+    return '/dashboard';
+  }
+  // Must not start with '//' or '/\\'
+  if (url.startsWith('//') || url.startsWith('/\\')) {
+    return '/dashboard';
+  }
+  return url;
+}

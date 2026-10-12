@@ -13,6 +13,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { useLogin } from '@/hooks/useApi';
 import { toastError } from '@/hooks/useToast';
 import { Suspense } from 'react';
+import { safeCallbackUrl } from '@/lib/utils';
 
 const loginSchema = z.object({
   email: z.string().email('Format email tidak valid'),
@@ -24,7 +25,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'));
   const [showPassword, setShowPassword] = useState(false);
   
   const loginMutation = useLogin();
