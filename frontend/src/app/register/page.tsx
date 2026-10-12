@@ -37,6 +37,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     watch,
+    setError,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -50,11 +51,17 @@ export default function RegisterPage() {
       router.push('/dashboard');
       router.refresh();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string; username?: string[]; email?: string[] } } };
-      if (err.response?.data?.username) {
-        toastError(err.response.data.username[0]);
+      const err = error as { response?: { data?: { detail?: string; username?: string[]; email?: string[]; password?: string[] } } };
+      if (err.response?.data?.password) {
+        // Show backend password validation errors under the password field
+        const passwordErrors = Array.isArray(err.response.data.password)
+          ? err.response.data.password.join(', ')
+          : err.response.data.password;
+        setError('password', { type: 'server', message: passwordErrors });
+      } else if (err.response?.data?.username) {
+        setError('username', { type: 'server', message: err.response.data.username[0] });
       } else if (err.response?.data?.email) {
-        toastError(err.response.data.email[0]);
+        setError('email', { type: 'server', message: err.response.data.email[0] });
       } else {
         toastError(err.response?.data?.detail || 'Terjadi kesalahan saat mendaftar');
       }

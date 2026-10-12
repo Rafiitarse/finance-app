@@ -52,6 +52,7 @@ export function CategoryForm({ isOpen, onClose, initialData }: CategoryFormProps
     handleSubmit,
     reset,
     watch,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<CategoryFormSchema>({
     resolver: zodResolver(categorySchema),
@@ -91,8 +92,20 @@ export function CategoryForm({ isOpen, onClose, initialData }: CategoryFormProps
       }
       onClose();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } };
-      toastError(err.response?.data?.detail || 'Terjadi kesalahan');
+      const err = error as { response?: { status?: number; data?: { detail?: string; name?: string[] } } };
+      if (err.response?.status === 400 && err.response.data?.name) {
+        // Set field error for duplicate name
+        const nameError = Array.isArray(err.response.data.name)
+          ? err.response.data.name.join(', ')
+          : err.response.data.name;
+        setError('name', { type: 'server', message: nameError });
+      } else if (err.response?.status === 409 && err.response.data?.detail) {
+        toastError(err.response.data.detail);
+      } else if (err.response?.status === 409) {
+        toastError('Kategori digunakan oleh transaksi dan tidak bisa dihapus');
+      } else {
+        toastError(err.response?.data?.detail || 'Terjadi kesalahan');
+      }
     }
   };
 

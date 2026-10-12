@@ -38,8 +38,15 @@ export default function CategoriesPage() {
         await deleteMutation.mutateAsync(id);
         toastSuccess('Kategori berhasil dihapus');
         refetch();
-      } catch {
-        toastError('Gagal menghapus kategori');
+      } catch (error: unknown) {
+        const err = error as { response?: { status?: number; data?: { detail?: string } } };
+        if (err.response?.status === 409 && err.response.data?.detail) {
+          toastError(err.response.data.detail);
+        } else if (err.response?.status === 409) {
+          toastError('Kategori digunakan oleh transaksi dan tidak bisa dihapus');
+        } else {
+          toastError('Gagal menghapus kategori');
+        }
       }
     }
   };
