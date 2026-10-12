@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { useLogin } from '@/hooks/useApi';
 import { toastError } from '@/hooks/useToast';
-import { cn } from '@/lib/utils';
+import { Suspense } from 'react';
 
 const loginSchema = z.object({
   email: z.string().email('Format email tidak valid'),
@@ -21,7 +21,7 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
@@ -108,5 +108,13 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

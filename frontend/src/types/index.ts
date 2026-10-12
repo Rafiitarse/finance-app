@@ -107,6 +107,8 @@ export interface TransactionFilters {
   search?: string;
   ordering?: string;
   page?: number;
+  month?: number;
+  year?: number;
 }
 
 export interface SummaryFilters {

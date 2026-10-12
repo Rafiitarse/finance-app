@@ -141,7 +141,9 @@ export default function CategoriesPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-gray-900 truncate">{category.name}</p>
                           {category.is_default && (
-                            <Shield className="w-4 h-4 text-primary-500 flex-shrink-0" title="Kategori default" />
+                            <span aria-label="Kategori default">
+                              <Shield className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                            </span>
                           )}
                         </div>
                         <p className="text-sm text-gray-500">
