@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { authApi, categoriesApi, transactionsApi, setTokens } from '@/lib/api';
+import { authApi, categoriesApi, transactionsApi, setTokens, getRefreshToken, clearTokens } from '@/lib/api';
 import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters } from '@/types';
 import { useAuthStore } from '@/lib/store';
 
@@ -48,13 +48,21 @@ export function useLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (refresh: string) => authApi.logout(refresh),
+    mutationFn: async () => {
+      const refresh = getRefreshToken();
+      if (refresh) {
+        await authApi.logout(refresh);
+      }
+    },
     onSuccess: () => {
-      logout();
-      queryClient.clear();
+      // Server logout succeeded
     },
     onError: () => {
-      // Even if logout fails on server, clear local state
+      // Swallow server/network errors - we still clear locally
+    },
+    onSettled: () => {
+      // Always clear local state regardless of server outcome
+      clearTokens();
       logout();
       queryClient.clear();
     },

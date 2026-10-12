@@ -18,14 +18,12 @@ export function Header() {
   const logoutMutation = useLogout();
 
   const handleLogout = async () => {
-    const refreshToken = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('refresh_token='))
-      ?.split('=')[1];
-    
-    await logoutMutation.mutateAsync(refreshToken || '');
-    router.push('/login');
-    setProfileOpen(false);
+    try {
+      await logoutMutation.mutateAsync();
+    } finally {
+      router.push('/login');
+      setProfileOpen(false);
+    }
   };
 
   const getPageTitle = () => {
