@@ -19,8 +19,18 @@ export const getAccessToken = (): string | undefined => Cookies.get(ACCESS_TOKEN
 export const getRefreshToken = (): string | undefined => Cookies.get(REFRESH_TOKEN_KEY);
 
 export const setTokens = (tokens: AuthTokens): void => {
-  Cookies.set(ACCESS_TOKEN_KEY, tokens.access, { expires: 1/24 }); // 1 hour
-  Cookies.set(REFRESH_TOKEN_KEY, tokens.refresh, { expires: 7 }); // 7 days
+  const cookieOptions = {
+    expires: 1/24, // 1 hour
+    sameSite: 'lax' as const,
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+  };
+  const refreshCookieOptions = {
+    ...cookieOptions,
+    expires: 7, // 7 days
+  };
+  Cookies.set(ACCESS_TOKEN_KEY, tokens.access, cookieOptions);
+  Cookies.set(REFRESH_TOKEN_KEY, tokens.refresh, refreshCookieOptions);
 };
 
 export const clearTokens = (): void => {
