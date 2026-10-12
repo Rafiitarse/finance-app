@@ -88,16 +88,17 @@ export const TRANSACTION_TYPE_COLORS: Record<'income' | 'expense', string> = {
  * Returns '/dashboard' for invalid or empty inputs.
  */
 export function safeCallbackUrl(url: string | null | undefined): string {
-  if (!url || typeof url !== 'string') {
-    return '/dashboard';
+  const fallback = '/dashboard';
+  if (typeof url !== 'string' || url === '') return fallback;
+  // Browsers silently drop tab, CR and LF inside a URL, so "/<TAB>/evil.example"
+  // becomes "//evil.example". Reject every control character and any backslash.
+  if (/[\u0000-\u001f\u007f\\]/.test(url)) return fallback;
+  if (!url.startsWith('/') || url.startsWith('//')) return fallback;
+  try {
+    const parsed = new URL(url, 'http://localhost');
+    if (parsed.origin !== 'http://localhost') return fallback;
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
+    return fallback;
   }
-  // Must start with a single '/'
-  if (!url.startsWith('/')) {
-    return '/dashboard';
-  }
-  // Must not start with '//' or '/\\'
-  if (url.startsWith('//') || url.startsWith('/\\')) {
-    return '/dashboard';
-  }
-  return url;
 }
