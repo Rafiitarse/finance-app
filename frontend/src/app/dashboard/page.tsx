@@ -25,12 +25,15 @@ export default function DashboardPage() {
     ordering: '-date',
   });
   
-  const { data: summary } = useTransactionSummary({
+  const { data: summaryResponse } = useTransactionSummary({
     month: currentMonth.month,
     year: currentMonth.year,
   });
   
-  const { data: categorySummary } = useCategorySummary();
+  const { data: categorySummaryResponse } = useCategorySummary();
+  
+  const summary = summaryResponse?.data;
+  const categorySummary = categorySummaryResponse?.data || [];
 
   const goToPreviousMonth = () => {
     setCurrentMonth((prev) => {
