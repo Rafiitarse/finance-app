@@ -51,14 +51,12 @@ export function useLogout() {
     mutationFn: async () => {
       const refresh = getRefreshToken();
       if (refresh) {
-        await authApi.logout(refresh);
+        try {
+          await authApi.logout(refresh);
+        } catch {
+          // Swallow server/network errors - we still clear locally
+        }
       }
-    },
-    onSuccess: () => {
-      // Server logout succeeded
-    },
-    onError: () => {
-      // Swallow server/network errors - we still clear locally
     },
     onSettled: () => {
       // Always clear local state regardless of server outcome
