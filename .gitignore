@@ -41,6 +41,7 @@ frontend/build/
 frontend/dist/
 frontend/*.log
 frontend/.turbo/
+frontend/*.tsbuildinfo
 
 # Docker
 docker-compose.override.yml
