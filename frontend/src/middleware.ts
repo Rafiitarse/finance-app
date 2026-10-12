@@ -9,12 +9,14 @@ export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')?.value;
   const refreshToken = request.cookies.get('refresh_token')?.value;
   
-  const isAuthenticated = !!accessToken;
+  // User is authenticated if EITHER access_token or refresh_token exists
+  const isAuthenticated = !!accessToken || !!refreshToken;
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   const isAuthPath = AUTH_PATHS.some((path) => pathname === path);
 
   // Redirect authenticated users away from auth pages
-  if (isAuthenticated && isAuthPath) {
+  // Only redirect if access_token exists to avoid redirect loop with stale refresh cookie
+  if (accessToken && isAuthPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
