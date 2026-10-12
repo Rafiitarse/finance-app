@@ -21,6 +21,7 @@ from .serializers import (
     MonthlySummarySerializer,
     CategorySummarySerializer,
 )
+from .filters import TransactionFilter
 
 
 class SummaryQuerySerializer(serializers.Serializer):
@@ -168,7 +169,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     """ViewSet for Transaction CRUD."""
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    filterset_fields = ['category', 'category__type', 'date']
+    filterset_class = TransactionFilter
     search_fields = ['description', 'category__name']
     ordering_fields = ['date', 'amount', 'created_at']
     ordering = ['-date', '-created_at']
