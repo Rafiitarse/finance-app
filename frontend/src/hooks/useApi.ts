@@ -12,7 +12,7 @@ export function useLogin() {
     mutationFn: ({ email, password }: { email: string; password: string }) => 
       authApi.login(email, password),
     onSuccess: (data) => {
-      setUser(data.user);
+      setUser(data.data.user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
@@ -32,7 +32,7 @@ export function useRegister() {
       last_name: string;
     }) => authApi.register(data),
     onSuccess: (data) => {
-      setUser(data.user);
+      setUser(data.data.user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
