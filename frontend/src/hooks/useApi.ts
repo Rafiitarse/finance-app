@@ -30,7 +30,7 @@ export function useRegister() {
       password: string;
       password_confirm: string;
       first_name: string;
-      last_name: string;
+      last_name?: string;
     }) => authApi.register(data),
     onSuccess: (data) => {
       setUser(data.data.user);

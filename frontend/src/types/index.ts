@@ -58,7 +58,7 @@ export interface RegisterFormData {
   password: string;
   password_confirm: string;
   first_name: string;
-  last_name: string;
+  last_name?: string;
 }
 
 export interface LoginFormData {
@@ -69,14 +69,14 @@ export interface LoginFormData {
 export interface TransactionFormData {
   category_id: number;
   amount: string;
-  description: string;
+  description?: string;
   date: string;
 }
 
 export interface CategoryFormData {
   name: string;
   type: 'income' | 'expense';
-  icon: string;
+  icon?: string;
   color: string;
 }
 

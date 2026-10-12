@@ -129,7 +129,7 @@ export const authApi = {
     password: string;
     password_confirm: string;
     first_name: string;
-    last_name: string;
+    last_name?: string;
   }) => api.post<AuthResponse>('/auth/register/', data),
   
   me: () => api.get<AuthResponse['user']>('/auth/me/'),
@@ -184,4 +184,4 @@ export const transactionsApi = {
 };
 
 // Types for API functions
-import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse } from '@/types';
+import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse, CategorySummary, MonthlySummary } from '@/types';
