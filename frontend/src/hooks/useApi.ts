@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { authApi, categoriesApi, transactionsApi } from '@/lib/api';
+import { authApi, categoriesApi, transactionsApi, setTokens } from '@/lib/api';
 import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters } from '@/types';
 import { useAuthStore } from '@/lib/store';
 
@@ -13,7 +13,9 @@ export function useLogin() {
     mutationFn: ({ email, password }: { email: string; password: string }) => 
       authApi.login(email, password),
     onSuccess: (data) => {
-      setUser(data.data.user);
+      const { access, refresh, user } = data.data;
+      setTokens({ access, refresh });
+      setUser(user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
@@ -33,7 +35,9 @@ export function useRegister() {
       last_name?: string;
     }) => authApi.register(data),
     onSuccess: (data) => {
-      setUser(data.data.user);
+      const { access, refresh, user } = data.data;
+      setTokens({ access, refresh });
+      setUser(user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
