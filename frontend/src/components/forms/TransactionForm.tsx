@@ -118,7 +118,7 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
       title={isEditing ? 'Edit Transaksi' : 'Tambah Transaksi'}
       size="md"
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Select
           label="Kategori"
           options={categoryOptions}
@@ -130,8 +130,9 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
         <Input
           label="Jumlah"
           type="number"
-          step="100"
-          min="1"
+          step="any"
+          min="0.01"
+          inputMode="decimal"
           placeholder="0"
           error={errors.amount?.message}
           {...register('amount')}
