@@ -17,7 +17,10 @@ import type { Transaction, TransactionFormData, Category } from '@/types';
 import { cn } from '@/lib/utils';
 
 const transactionSchema = z.object({
-  category_id: z.number({ required_error: 'Kategori wajib dipilih' }),
+  category_id: z
+    .number({ required_error: 'Kategori wajib dipilih', invalid_type_error: 'Kategori wajib dipilih' })
+    .int()
+    .positive('Kategori wajib dipilih'),
   amount: z.string()
     .min(1, 'Jumlah wajib diisi')
     .refine((val) => parseFloat(val) >= 0.01, 'Jumlah minimal 0.01')
@@ -54,7 +57,7 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
   } = useForm<TransactionFormSchema>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      category_id: 0,
+      category_id: undefined,
       amount: '',
       description: '',
       date: defaultDate || new Date().toISOString().split('T')[0],
@@ -72,7 +75,7 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
       });
     } else {
       reset({
-        category_id: 0,
+        category_id: undefined,
         amount: '',
         description: '',
         date: defaultDate || new Date().toISOString().split('T')[0],
@@ -81,7 +84,6 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
   }, [initialData, defaultDate, reset]);
 
   const categoryOptions: SelectOption[] = [
-    { value: '', label: 'Pilih kategori', disabled: true },
     { value: 'income', label: '— Pemasukan —', disabled: true },
     ...incomeCategories.map((c) => ({ value: c.id, label: c.name })),
     { value: 'expense', label: '— Pengeluaran —', disabled: true },
@@ -99,12 +101,26 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
       }
       onClose();
     } catch (error: unknown) {
-      const err = error as { response?: { status?: number; data?: { detail?: string; amount?: string[] } } };
-      if (err.response?.status === 400 && err.response.data?.amount) {
-        const amountError = Array.isArray(err.response.data.amount)
-          ? err.response.data.amount.join(', ')
-          : err.response.data.amount;
-        setError('amount', { type: 'server', message: amountError });
+      const err = error as { response?: { status?: number; data?: { detail?: string; amount?: string[]; category_id?: string[]; date?: string[] } } };
+      if (err.response?.status === 400) {
+        if (err.response.data?.amount) {
+          const amountError = Array.isArray(err.response.data.amount)
+            ? err.response.data.amount.join(', ')
+            : err.response.data.amount;
+          setError('amount', { type: 'server', message: amountError });
+        }
+        if (err.response.data?.category_id) {
+          const categoryError = Array.isArray(err.response.data.category_id)
+            ? err.response.data.category_id.join(', ')
+            : err.response.data.category_id;
+          setError('category_id', { type: 'server', message: categoryError });
+        }
+        if (err.response.data?.date) {
+          const dateError = Array.isArray(err.response.data.date)
+            ? err.response.data.date.join(', ')
+            : err.response.data.date;
+          setError('date', { type: 'server', message: dateError });
+        }
       } else {
         toastError(err.response?.data?.detail || 'Terjadi kesalahan');
       }
