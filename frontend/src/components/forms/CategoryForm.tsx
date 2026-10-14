@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -52,6 +53,7 @@ export function CategoryForm({ isOpen, onClose, initialData }: CategoryFormProps
     handleSubmit,
     reset,
     watch,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<CategoryFormSchema>({
@@ -65,21 +67,23 @@ export function CategoryForm({ isOpen, onClose, initialData }: CategoryFormProps
   });
 
   // Populate form when editing - reset when initialData changes
-  if (isOpen && initialData) {
-    reset({
-      name: initialData.name,
-      type: initialData.type,
-      icon: initialData.icon,
-      color: initialData.color,
-    });
-  } else if (isOpen && !initialData) {
-    reset({
-      name: '',
-      type: 'expense',
-      icon: '',
-      color: '#EF4444',
-    });
-  }
+  useEffect(() => {
+    if (isOpen && initialData) {
+      reset({
+        name: initialData.name,
+        type: initialData.type,
+        icon: initialData.icon,
+        color: initialData.color,
+      });
+    } else if (isOpen && !initialData) {
+      reset({
+        name: '',
+        type: 'expense',
+        icon: '',
+        color: '#EF4444',
+      });
+    }
+  }, [isOpen, initialData, reset]);
 
   const onSubmit = async (data: CategoryFormSchema) => {
     try {
@@ -141,7 +145,7 @@ export function CategoryForm({ isOpen, onClose, initialData }: CategoryFormProps
               <button
                 key={iconName}
                 type="button"
-                onClick={() => register('icon').onChange({ target: { value: iconName } })}
+                onClick={() => setValue('icon', iconName, { shouldDirty: true, shouldValidate: true })}
                 className={cn(
                   'p-2 rounded-lg border-2 transition-all',
                   watch('icon') === iconName
@@ -163,7 +167,7 @@ export function CategoryForm({ isOpen, onClose, initialData }: CategoryFormProps
               <button
                 key={color}
                 type="button"
-                onClick={() => register('color').onChange({ target: { value: color } })}
+                onClick={() => setValue('color', color, { shouldDirty: true, shouldValidate: true })}
                 className={cn(
                   'w-8 h-8 rounded-lg border-2 transition-all',
                   watch('color') === color
