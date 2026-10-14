@@ -31,7 +31,8 @@ export default function TransactionsPage() {
     search: search || undefined,
     type: typeFilter || undefined,
     category: categoryFilter || undefined,
-    date: `${yearFilter}-${monthFilter.toString().padStart(2, '0')}`,
+    month: monthFilter,
+    year: yearFilter,
     ordering: '-date',
   });
   
