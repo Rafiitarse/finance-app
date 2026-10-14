@@ -53,6 +53,9 @@ class IsOwner(permissions.BasePermission):
 class CategoryViewSet(viewsets.ModelViewSet):
     """ViewSet for Category CRUD."""
     permission_classes = [permissions.IsAuthenticated]
+    # F-03: return the full category list (dropdowns/pages need every category);
+    # pagination would truncate at PAGE_SIZE and force a paginated response shape.
+    pagination_class = None
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['type']
     ordering_fields = ['name', 'created_at']
