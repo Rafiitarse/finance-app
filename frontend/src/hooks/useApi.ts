@@ -99,7 +99,7 @@ export function useCategories(type?: 'income' | 'expense') {
   return useQuery({
     queryKey: ['categories', type],
     queryFn: () => categoriesApi.list({ type }),
-    select: (data) => data.data.results,
+    select: (data) => data.data,
   });
 }
 

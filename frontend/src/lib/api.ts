@@ -154,7 +154,7 @@ export const authApi = {
 // Categories API
 export const categoriesApi = {
   list: (params?: { type?: string }) =>
-    api.get<PaginatedResponse<Category>>('/categories/', { params }),
+    api.get<Category[]>('/categories/', { params }),
   
   create: (data: CategoryFormData) =>
     api.post<Category>('/categories/', data),

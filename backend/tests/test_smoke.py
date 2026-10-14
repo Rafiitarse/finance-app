@@ -43,8 +43,12 @@ class TestSmoke:
         api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
         response = api_client.get('/api/categories/')
         assert response.status_code == status.HTTP_200_OK, f'List categories failed: {response.data}'
-        # Handle paginated response
-        results = response.data.get('results', response.data)
+        # Handle paginated or plain list response
+        results = (
+            response.data
+            if isinstance(response.data, list)
+            else response.data.get('results', response.data)
+        )
         # Should have default categories
         assert len(results) > 0
         # Check structure
