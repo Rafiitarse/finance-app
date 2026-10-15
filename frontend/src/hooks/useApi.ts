@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { authApi, categoriesApi, transactionsApi, setTokens, getRefreshToken, clearTokens } from '@/lib/api';
-import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters } from '@/types';
+import type { AxiosResponse } from 'axios';
+import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse } from '@/types';
 import { useAuthStore } from '@/lib/store';
 
 // Auth Hooks
@@ -151,11 +152,15 @@ export function useCategorySummary(filters?: SummaryFilters) {
 }
 
 // Transaction Hooks
-export function useTransactions(filters?: TransactionFilters) {
+export function useTransactions(
+  filters?: TransactionFilters,
+  options?: Partial<Omit<UseQueryOptions<AxiosResponse<PaginatedResponse<Transaction>>>, 'queryKey' | 'queryFn' | 'select'>>
+) {
   return useQuery({
     queryKey: ['transactions', filters],
     queryFn: () => transactionsApi.list(filters),
     select: (data) => data.data,
+    ...options,
   });
 }
 
