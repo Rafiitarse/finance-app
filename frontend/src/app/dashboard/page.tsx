@@ -30,7 +30,10 @@ export default function DashboardPage() {
     year: currentMonth.year,
   });
   
-  const { data: categorySummaryResponse } = useCategorySummary();
+  const { data: categorySummaryResponse } = useCategorySummary({
+    month: currentMonth.month,
+    year: currentMonth.year,
+  });
   
   const summary = summaryResponse?.data;
   const categorySummary = categorySummaryResponse?.data || [];

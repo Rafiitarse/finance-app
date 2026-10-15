@@ -168,8 +168,8 @@ export const categoriesApi = {
   delete: (id: number) =>
     api.delete(`/categories/${id}/`),
   
-  summary: () =>
-    api.get<CategorySummary[]>('/categories/summary/'),
+  summary: (params?: SummaryFilters) =>
+    api.get<CategorySummary[]>('/categories/summary/', { params }),
 };
 
 // Transactions API

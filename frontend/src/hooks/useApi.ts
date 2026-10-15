@@ -143,10 +143,10 @@ export function useDeleteCategory() {
   });
 }
 
-export function useCategorySummary() {
+export function useCategorySummary(filters?: SummaryFilters) {
   return useQuery({
-    queryKey: ['category-summary'],
-    queryFn: () => categoriesApi.summary(),
+    queryKey: ['category-summary', filters],
+    queryFn: () => categoriesApi.summary(filters),
   });
 }
 
