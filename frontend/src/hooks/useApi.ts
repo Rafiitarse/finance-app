@@ -172,6 +172,13 @@ export function useTransaction(id: number) {
   });
 }
 
+export function useTransactionTrend(filters?: { months?: number; year?: number; month?: number }) {
+  return useQuery({
+    queryKey: ['transaction-trend', filters],
+    queryFn: () => transactionsApi.trend(filters),
+  });
+}
+
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -180,6 +187,7 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['category-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-trend'] });
     },
   });
 }
@@ -194,6 +202,7 @@ export function useUpdateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['category-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-trend'] });
     },
   });
 }
@@ -206,6 +215,7 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['category-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-trend'] });
     },
   });
 }

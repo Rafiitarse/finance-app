@@ -9,7 +9,7 @@ import { MonthlyChart } from '@/components/charts/MonthlyChart';
 import { CategoryBreakdown } from '@/components/charts/CategoryBreakdown';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { TransactionForm } from '@/components/forms/TransactionForm';
-import { useTransactions, useTransactionSummary, useCategorySummary } from '@/hooks/useApi';
+import { useTransactions, useTransactionSummary, useCategorySummary, useTransactionTrend } from '@/hooks/useApi';
 import { formatCurrency, getMonthYear, getMonthOptions, getYearOptions, TRANSACTION_TYPE_COLORS } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,12 @@ export default function DashboardPage() {
   
   const summary = summaryResponse?.data;
   const categorySummary = categorySummaryResponse?.data || [];
+
+  // Real 6-month trend ending at the selected month (zero-filled by the backend)
+  const { data: trendResponse } = useTransactionTrend({
+    year: currentMonth.year,
+    month: currentMonth.month,
+  });
 
   const goToPreviousMonth = () => {
     setCurrentMonth((prev) => {
@@ -73,28 +79,13 @@ export default function DashboardPage() {
     currentMonth.month === new Date().getMonth() + 1 && 
     currentMonth.year === new Date().getFullYear();
 
-  // Generate last 6 months data for chart
-  const chartData = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    chartData.push({
-      month: date.toISOString().split('T')[0],
-      income: 0,
-      expense: 0,
-    });
-  }
-
-  // If we had historical data, we'd fill it here
-  // For now, just show current month
-  const currentMonthData = chartData.find(d => {
-    const dDate = new Date(d.month);
-    return dDate.getMonth() + 1 === currentMonth.month && dDate.getFullYear() === currentMonth.year;
-  });
-  if (currentMonthData && summary) {
-    currentMonthData.income = parseFloat(summary.total_income);
-    currentMonthData.expense = parseFloat(summary.total_expense);
-  }
+  // Real 6-month trend ending at the selected month — the backend zero-fills
+  // months without transactions, so no manual padding is needed here.
+  const chartData = (trendResponse?.data ?? []).map((item) => ({
+    month: item.month,
+    income: parseFloat(item.total_income),
+    expense: parseFloat(item.total_expense),
+  }));
 
   return (
     <MainLayout>

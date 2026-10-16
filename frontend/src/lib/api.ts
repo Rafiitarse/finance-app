@@ -176,6 +176,9 @@ export const categoriesApi = {
 export const transactionsApi = {
   list: (params?: TransactionFilters) =>
     api.get<PaginatedResponse<Transaction>>('/transactions/', { params }),
+
+  trend: (params?: { months?: number; year?: number; month?: number }) =>
+    api.get<MonthlyTrendItem[]>('/transactions/trend/', { params }),
   
   create: (data: TransactionFormData) =>
     api.post<Transaction>('/transactions/', data),
@@ -194,4 +197,4 @@ export const transactionsApi = {
 };
 
 // Types for API functions
-import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse, CategorySummary, MonthlySummary } from '@/types';
+import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse, CategorySummary, MonthlySummary, MonthlyTrendItem } from '@/types';
