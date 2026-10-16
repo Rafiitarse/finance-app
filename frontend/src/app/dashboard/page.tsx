@@ -117,15 +117,22 @@ export default function DashboardPage() {
               }}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              {getYearOptions().map((y) => (
-                <optgroup key={y.value} label={y.label}>
-                  {getMonthOptions().map((m) => (
-                    <option key={`${y.value}-${m.value}`} value={`${y.value}-${m.value}`}>
-                      {m.label} {y.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
+              {getYearOptions().map((y) => {
+                // Never offer months after the current month (D-05)
+                const now = new Date();
+                const months = getMonthOptions().filter(
+                  (m) => y.value < now.getFullYear() || m.value <= now.getMonth() + 1
+                );
+                return (
+                  <optgroup key={y.value} label={y.label}>
+                    {months.map((m) => (
+                      <option key={`${y.value}-${m.value}`} value={`${y.value}-${m.value}`}>
+                        {m.label} {y.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
             <Button 
               variant="outline" 
