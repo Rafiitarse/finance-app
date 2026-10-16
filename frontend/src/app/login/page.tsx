@@ -44,8 +44,12 @@ function LoginForm() {
       router.push(callbackUrl);
       router.refresh();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } };
-      toastError(err.response?.data?.detail || 'Email atau password salah');
+      const err = error as { response?: { status?: number; data?: { detail?: string } } };
+      if (err.response?.status === 401) {
+        toastError('Email atau password salah');
+      } else {
+        toastError(err.response?.data?.detail || 'Gagal masuk. Silakan coba lagi.');
+      }
     }
   };
 

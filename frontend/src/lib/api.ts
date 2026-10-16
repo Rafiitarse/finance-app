@@ -68,12 +68,24 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
   failedQueue = [];
 };
 
+// Auth endpoints: a 401 from these is a real credential error, not an expired
+// access token, so the refresh flow must be skipped and the original error
+// forwarded to the caller.
+const AUTH_NO_REFRESH_ENDPOINTS = ['/auth/login/', '/auth/register/', '/auth/refresh/'];
+
+const isAuthEndpoint = (url?: string): boolean =>
+  !!url && AUTH_NO_REFRESH_ENDPOINTS.some((endpoint) => url.endsWith(endpoint));
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       if (isRefreshing) {
         // Wait for refresh to complete
         return new Promise((resolve, reject) => {
