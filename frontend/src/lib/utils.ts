@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { parseISO } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,7 +17,7 @@ export function formatCurrency(amount: string | number): string {
 }
 
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+  const date = parseISO(dateString);
   return new Intl.DateTimeFormat('id-ID', {
     day: 'numeric',
     month: 'long',
@@ -25,7 +26,7 @@ export function formatDate(dateString: string): string {
 }
 
 export function formatShortDate(dateString: string): string {
-  const date = new Date(dateString);
+  const date = parseISO(dateString);
   return new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
     month: '2-digit',
@@ -33,8 +34,9 @@ export function formatShortDate(dateString: string): string {
   }).format(date);
 }
 
-export function getMonthYear(dateString: string): string {
-  const date = new Date(dateString);
+export function getMonthYear(year: number, month: number): string {
+  // Local construction — never parse a non-ISO string like "2026-1-01"
+  const date = new Date(year, month - 1, 1);
   return new Intl.DateTimeFormat('id-ID', {
     month: 'long',
     year: 'numeric',

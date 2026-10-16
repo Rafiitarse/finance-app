@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { authApi, categoriesApi, transactionsApi, setTokens, getRefreshToken, clearTokens } from '@/lib/api';
-import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters } from '@/types';
+import type { AxiosResponse } from 'axios';
+import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse } from '@/types';
 import { useAuthStore } from '@/lib/store';
 
 // Auth Hooks
@@ -143,19 +144,23 @@ export function useDeleteCategory() {
   });
 }
 
-export function useCategorySummary() {
+export function useCategorySummary(filters?: SummaryFilters) {
   return useQuery({
-    queryKey: ['category-summary'],
-    queryFn: () => categoriesApi.summary(),
+    queryKey: ['category-summary', filters],
+    queryFn: () => categoriesApi.summary(filters),
   });
 }
 
 // Transaction Hooks
-export function useTransactions(filters?: TransactionFilters) {
+export function useTransactions(
+  filters?: TransactionFilters,
+  options?: Partial<Omit<UseQueryOptions<AxiosResponse<PaginatedResponse<Transaction>>>, 'queryKey' | 'queryFn' | 'select'>>
+) {
   return useQuery({
     queryKey: ['transactions', filters],
     queryFn: () => transactionsApi.list(filters),
     select: (data) => data.data,
+    ...options,
   });
 }
 
@@ -167,6 +172,13 @@ export function useTransaction(id: number) {
   });
 }
 
+export function useTransactionTrend(filters?: { months?: number; year?: number; month?: number }) {
+  return useQuery({
+    queryKey: ['transaction-trend', filters],
+    queryFn: () => transactionsApi.trend(filters),
+  });
+}
+
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -175,6 +187,7 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['category-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-trend'] });
     },
   });
 }
@@ -189,6 +202,7 @@ export function useUpdateTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['category-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-trend'] });
     },
   });
 }
@@ -201,6 +215,7 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['category-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-trend'] });
     },
   });
 }

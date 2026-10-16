@@ -18,11 +18,16 @@ export function MonthlyChart({ data, className }: MonthlyChartProps) {
     );
   }
 
-  const chartData = data.map((item) => ({
-    month: new Date(item.month).toLocaleDateString('id-ID', { month: 'short' }),
-    income: item.income,
-    expense: item.expense,
-  }));
+  const chartData = data.map((item) => {
+    // Parse "YYYY-MM-01" locally — new Date(string) would depend on the timezone
+    const [year, month] = item.month.split('-').map(Number);
+    const label = new Date(year, month - 1, 1).toLocaleDateString('id-ID', { month: 'short' });
+    return {
+      month: label,
+      income: item.income,
+      expense: item.expense,
+    };
+  });
 
   return (
     <div className={cn('h-64', className)}>

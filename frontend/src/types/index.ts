@@ -40,6 +40,13 @@ export interface MonthlySummary {
   balance: string;
 }
 
+export interface MonthlyTrendItem {
+  month: string;
+  total_income: string;
+  total_expense: string;
+  balance: string;
+}
+
 export interface CategorySummary {
   category_id: number;
   category_name: string;

@@ -30,6 +30,15 @@ class SummaryQuerySerializer(serializers.Serializer):
     month = serializers.IntegerField(min_value=1, max_value=12, required=False)
 
 
+class TrendQuerySerializer(SummaryQuerySerializer):
+    """Query params for the transaction trend endpoint (D-02).
+
+    year/month validation is inherited from SummaryQuerySerializer so both
+    summary endpoints reject the same out-of-range values identically.
+    """
+    months = serializers.IntegerField(min_value=1, max_value=24, required=False, default=6)
+
+
 def month_range(year: int, month: int) -> tuple[date, date]:
     """Return (start_of_month, start_of_next_month) for the given year and month."""
     start = date(year, month, 1)
@@ -38,6 +47,20 @@ def month_range(year: int, month: int) -> tuple[date, date]:
     else:
         next_start = date(year, month + 1, 1)
     return start, next_start
+
+
+def months_ending_at(year: int, month: int, count: int) -> list[date]:
+    """Return `count` month-start dates in ascending order, ending at the given year/month.
+
+    Handles year rollover by working in a flat month index (year * 12 + month - 1),
+    so a January reference with count=3 yields [Nov prev, Dec prev, Jan].
+    """
+    last_index = year * 12 + (month - 1)
+    starts = []
+    for index in range(last_index - count + 1, last_index + 1):
+        year_part, month_part = divmod(index, 12)
+        starts.append(date(year_part, month_part + 1, 1))
+    return starts
 
 
 class IsOwner(permissions.BasePermission):
@@ -251,4 +274,55 @@ class TransactionViewSet(viewsets.ModelViewSet):
             'total_expense': total_expense,
             'balance': balance,
         })
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def trend(self, request):
+        """Get income/expense/balance per month for the last N months (D-02).
+
+        ONE aggregate query groups transactions by year+month; months without
+        transactions are zero-filled so the chart always has N points.
+        """
+        query_serializer = TrendQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        today = timezone.localdate()
+
+        months = query_serializer.validated_data.get('months', 6)
+        year = query_serializer.validated_data.get('year', today.year)
+        month = query_serializer.validated_data.get('month', today.month)
+
+        window = months_ending_at(year, month, months)
+        first_month = window[0]
+        _, window_end = month_range(year, month)
+
+        # Single aggregate query: group by year + month.
+        grouped = Transaction.objects.filter(
+            user=user,
+            date__gte=first_month,
+            date__lt=window_end,
+        ).values('date__year', 'date__month').annotate(
+            total_income=Sum('amount', filter=Q(category__type='income')),
+            total_expense=Sum('amount', filter=Q(category__type='expense')),
+        )
+
+        totals = {
+            (row['date__year'], row['date__month']): row
+            for row in grouped
+        }
+
+        results = []
+        for month_start in window:
+            row = totals.get((month_start.year, month_start.month))
+            total_income = row['total_income'] if row and row['total_income'] else Decimal('0')
+            total_expense = row['total_expense'] if row and row['total_expense'] else Decimal('0')
+            results.append({
+                'month': month_start,
+                'total_income': total_income,
+                'total_expense': total_expense,
+                'balance': total_income - total_expense,
+            })
+
+        serializer = MonthlySummarySerializer(results, many=True)
         return Response(serializer.data)

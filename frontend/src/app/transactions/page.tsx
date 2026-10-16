@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, Plus, ChevronDown, Edit, Trash2, Download } from 'lucide-react';
+import { keepPreviousData } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -18,6 +19,8 @@ import type { Transaction, Category } from '@/types';
 
 export default function TransactionsPage() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState<'income' | 'expense' | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<number | ''>('');
   const [monthFilter, setMonthFilter] = useState(new Date().getMonth() + 1);
@@ -26,15 +29,30 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  
-  const { data: transactions, isLoading, refetch } = useTransactions({
-    search: search || undefined,
-    type: typeFilter || undefined,
-    category: categoryFilter || undefined,
-    month: monthFilter,
-    year: yearFilter,
-    ordering: '-date',
-  });
+
+  // Debounce search so we don't fire a request on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset to first page whenever filters or search change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, typeFilter, categoryFilter, monthFilter, yearFilter]);
+
+  const { data: transactions, isLoading, refetch } = useTransactions(
+    {
+      search: debouncedSearch || undefined,
+      type: typeFilter || undefined,
+      category: categoryFilter || undefined,
+      month: monthFilter,
+      year: yearFilter,
+      ordering: '-date',
+      page,
+    },
+    { placeholderData: keepPreviousData }
+  );
   
   const { data: categories } = useCategories();
   const deleteMutation = useDeleteTransaction();
@@ -221,16 +239,22 @@ export default function TransactionsPage() {
                   Menampilkan {transactions!.results.length} dari {transactions!.count} transaksi
                 </p>
                 <div className="flex gap-2">
-                  {transactions?.previous && (
-                    <Button variant="outline" size="sm" onClick={() => {}}>
-                      Sebelumnya
-                    </Button>
-                  )}
-                  {transactions?.next && (
-                    <Button variant="outline" size="sm" onClick={() => {}}>
-                      Selanjutnya
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    Sebelumnya
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!transactions?.next}
+                    onClick={() => setPage((prev) => prev + 1)}
+                  >
+                    Selanjutnya
+                  </Button>
                 </div>
               </div>
             )}

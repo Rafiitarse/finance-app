@@ -1,19 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { MonthlyChart } from '@/components/charts/MonthlyChart';
 import { CategoryBreakdown } from '@/components/charts/CategoryBreakdown';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useTransactions, useTransactionSummary, useCategorySummary } from '@/hooks/useApi';
+import { TransactionForm } from '@/components/forms/TransactionForm';
+import { useTransactions, useTransactionSummary, useCategorySummary, useTransactionTrend } from '@/hooks/useApi';
 import { formatCurrency, getMonthYear, getMonthOptions, getYearOptions, TRANSACTION_TYPE_COLORS } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
 import type { MonthlySummary, CategorySummary } from '@/types';
 
 export default function DashboardPage() {
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
@@ -30,10 +33,19 @@ export default function DashboardPage() {
     year: currentMonth.year,
   });
   
-  const { data: categorySummaryResponse } = useCategorySummary();
+  const { data: categorySummaryResponse } = useCategorySummary({
+    month: currentMonth.month,
+    year: currentMonth.year,
+  });
   
   const summary = summaryResponse?.data;
   const categorySummary = categorySummaryResponse?.data || [];
+
+  // Real 6-month trend ending at the selected month (zero-filled by the backend)
+  const { data: trendResponse } = useTransactionTrend({
+    year: currentMonth.year,
+    month: currentMonth.month,
+  });
 
   const goToPreviousMonth = () => {
     setCurrentMonth((prev) => {
@@ -67,28 +79,13 @@ export default function DashboardPage() {
     currentMonth.month === new Date().getMonth() + 1 && 
     currentMonth.year === new Date().getFullYear();
 
-  // Generate last 6 months data for chart
-  const chartData = [];
-  for (let i = 5; i >= 0; i--) {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    chartData.push({
-      month: date.toISOString().split('T')[0],
-      income: 0,
-      expense: 0,
-    });
-  }
-
-  // If we had historical data, we'd fill it here
-  // For now, just show current month
-  const currentMonthData = chartData.find(d => {
-    const dDate = new Date(d.month);
-    return dDate.getMonth() + 1 === currentMonth.month && dDate.getFullYear() === currentMonth.year;
-  });
-  if (currentMonthData && summary) {
-    currentMonthData.income = parseFloat(summary.total_income);
-    currentMonthData.expense = parseFloat(summary.total_expense);
-  }
+  // Real 6-month trend ending at the selected month — the backend zero-fills
+  // months without transactions, so no manual padding is needed here.
+  const chartData = (trendResponse?.data ?? []).map((item) => ({
+    month: item.month,
+    income: parseFloat(item.total_income),
+    expense: parseFloat(item.total_expense),
+  }));
 
   return (
     <MainLayout>
@@ -97,7 +94,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-500">Ringkasan keuangan bulan {getMonthYear(`${currentMonth.year}-${currentMonth.month}-01`)}</p>
+            <p className="text-gray-500">Ringkasan keuangan bulan {getMonthYear(currentMonth.year, currentMonth.month)}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
@@ -111,15 +108,22 @@ export default function DashboardPage() {
               }}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              {getYearOptions().map((y) => (
-                <optgroup key={y.value} label={y.label}>
-                  {getMonthOptions().map((m) => (
-                    <option key={`${y.value}-${m.value}`} value={`${y.value}-${m.value}`}>
-                      {m.label} {y.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
+              {getYearOptions().map((y) => {
+                // Never offer months after the current month (D-05)
+                const now = new Date();
+                const months = getMonthOptions().filter(
+                  (m) => y.value < now.getFullYear() || m.value <= now.getMonth() + 1
+                );
+                return (
+                  <optgroup key={y.value} label={y.label}>
+                    {months.map((m) => (
+                      <option key={`${y.value}-${m.value}`} value={`${y.value}-${m.value}`}>
+                        {m.label} {y.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
             <Button 
               variant="outline" 
@@ -129,7 +133,7 @@ export default function DashboardPage() {
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <Button className="ml-2" onClick={() => {}}>
+            <Button className="ml-2" onClick={() => setIsFormOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Transaksi Baru
             </Button>
@@ -211,7 +215,12 @@ export default function DashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Transaksi Terbaru</h2>
-              <Button variant="ghost" size="sm">Lihat Semua</Button>
+              <Link
+                href="/transactions"
+                className="inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-gray-700 hover:bg-gray-100 px-3 py-1.5 text-sm gap-1.5"
+              >
+                Lihat Semua
+              </Link>
             </div>
             
             {transactionsLoading ? (
@@ -231,7 +240,7 @@ export default function DashboardPage() {
               <div className="text-center py-8">
                 <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">Belum ada transaksi bulan ini</p>
-                <Button className="mt-4" onClick={() => {}}>
+                <Button className="mt-4" onClick={() => setIsFormOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Tambah Transaksi
                 </Button>
@@ -262,6 +271,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Transaction Form Modal */}
+      <TransactionForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+      />
     </MainLayout>
   );
 }

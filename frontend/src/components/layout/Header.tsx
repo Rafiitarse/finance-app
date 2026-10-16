@@ -31,7 +31,6 @@ export function Header() {
       '/dashboard': 'Dashboard',
       '/transactions': 'Transaksi',
       '/categories': 'Kategori',
-      '/reports': 'Laporan',
       '/settings': 'Pengaturan',
     };
     return titles[pathname] || 'FinanceApp';

@@ -8,7 +8,6 @@ import {
   CreditCard,
   Tags,
   Settings,
-  BarChart2,
 } from 'lucide-react';
 import { useUIStore } from '@/lib/store';
 
@@ -16,7 +15,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Transaksi', href: '/transactions', icon: CreditCard },
   { name: 'Kategori', href: '/categories', icon: Tags },
-  { name: 'Laporan', href: '/reports', icon: BarChart2 },
   { name: 'Pengaturan', href: '/settings', icon: Settings },
 ];
 
