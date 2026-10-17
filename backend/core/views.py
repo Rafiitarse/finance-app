@@ -14,6 +14,7 @@ from .serializers import (
     UserSerializer,
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
+    ProfileUpdateSerializer,
 )
 
 User = get_user_model()
@@ -51,12 +52,18 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 
 class MeView(APIView):
-    """Get current authenticated user."""
+    """Get or update the current authenticated user."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
 
 
 class LogoutView(APIView):

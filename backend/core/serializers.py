@@ -60,6 +60,25 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating the authenticated user's own profile (PATCH /api/auth/me/)."""
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'username', 'email']
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError('A user with that username already exists.')
+        return value
+
+    def validate_email(self, value):
+        value = value.lower()
+        if User.objects.filter(email__iexact=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError('A user with that email already exists.')
+        return value
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom JWT token serializer with user data."""
     
