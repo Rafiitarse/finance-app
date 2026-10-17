@@ -47,10 +47,57 @@ class RegisterSerializer(serializers.ModelSerializer):
         
         return attrs
 
+    def validate_email(self, value):
+        """Store email in lowercase and enforce case-insensitive uniqueness."""
+        value = value.lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('A user with that email already exists.')
+        return value
+
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(**validated_data)
         return user
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating the authenticated user's own profile (PATCH /api/auth/me/)."""
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'username', 'email']
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError('A user with that username already exists.')
+        return value
+
+    def validate_email(self, value):
+        value = value.lower()
+        if User.objects.filter(email__iexact=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError('A user with that email already exists.')
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Change password for the authenticated user; verifies the current password first."""
+
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError('Your current password is incorrect.')
+        return value
+
+    def validate_new_password(self, value):
+        user = self.context['request'].user
+        try:
+            validate_password(value, user=user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return value
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -64,6 +111,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        # Normalize email to lowercase before authenticating (A-06).
+        if self.username_field in attrs and attrs[self.username_field]:
+            attrs[self.username_field] = attrs[self.username_field].lower()
         data = super().validate(attrs)
         data['user'] = UserSerializer(self.user).data
         return data

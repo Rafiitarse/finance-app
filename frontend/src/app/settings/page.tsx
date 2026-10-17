@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User, Lock, Bell, Save, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuthStore } from '@/lib/store';
 import { toastSuccess, toastError } from '@/hooks/useToast';
+import { useUpdateProfile, useChangePassword, useDeleteAccount } from '@/hooks/useApi';
 import { cn } from '@/lib/utils';
 
 const profileSchema = z.object({
@@ -34,10 +37,17 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'notifications'>('profile');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+
+  const updateProfileMutation = useUpdateProfile();
+  const changePasswordMutation = useChangePassword();
+  const deleteAccountMutation = useDeleteAccount();
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -59,16 +69,63 @@ export default function SettingsPage() {
   });
 
   const handleProfileSubmit = async (data: ProfileFormData) => {
-    // In a real app, call API to update profile
-    console.log('Update profile:', data);
-    toastSuccess('Profil berhasil diperbarui');
+    try {
+      await updateProfileMutation.mutateAsync(data);
+      toastSuccess('Profil berhasil diperbarui');
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: Record<string, string[] | string> } };
+      if (err.response?.status === 400 && err.response.data) {
+        const data = err.response.data;
+        if (data.username) profileForm.setError('username', { type: 'server', message: String(data.username) });
+        if (data.email) profileForm.setError('email', { type: 'server', message: String(data.email) });
+        if (data.first_name) profileForm.setError('first_name', { type: 'server', message: String(data.first_name) });
+        if (data.last_name) profileForm.setError('last_name', { type: 'server', message: String(data.last_name) });
+        if (data.detail) toastError(String(data.detail));
+      } else {
+        toastError('Gagal memperbarui profil');
+      }
+    }
   };
 
   const handlePasswordSubmit = async (data: PasswordFormData) => {
-    // In a real app, call API to change password
-    console.log('Change password:', data);
-    toastSuccess('Password berhasil diubah');
-    passwordForm.reset();
+    try {
+      await changePasswordMutation.mutateAsync({
+        current_password: data.current_password,
+        new_password: data.new_password,
+      });
+      toastSuccess('Password berhasil diubah');
+      passwordForm.reset();
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: Record<string, string[] | string> } };
+      if (err.response?.status === 400 && err.response.data) {
+        const data = err.response.data;
+        if (data.current_password) passwordForm.setError('current_password', { type: 'server', message: String(data.current_password) });
+        if (data.new_password) passwordForm.setError('new_password', { type: 'server', message: String(Array.isArray(data.new_password) ? data.new_password.join(', ') : data.new_password) });
+        if (data.detail) toastError(String(data.detail));
+      } else {
+        toastError('Gagal mengubah password');
+      }
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toastError('Masukkan password untuk menghapus akun');
+      return;
+    }
+    try {
+      await deleteAccountMutation.mutateAsync({ password: deletePassword });
+      setIsDeleteModalOpen(false);
+      toastSuccess('Akun berhasil dihapus');
+      router.push('/login');
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: Record<string, string[] | string> } };
+      if (err.response?.status === 400 && err.response.data?.password) {
+        toastError(String(err.response.data.password));
+      } else {
+        toastError('Gagal menghapus akun');
+      }
+    }
   };
 
   return (
@@ -134,7 +191,7 @@ export default function SettingsPage() {
                 {...profileForm.register('email')}
               />
               <CardFooter>
-                <Button type="submit">
+                <Button type="submit" loading={updateProfileMutation.isPending}>
                   <Save className="w-4 h-4 mr-2" />
                   Simpan Perubahan
                 </Button>
@@ -200,7 +257,7 @@ export default function SettingsPage() {
               </div>
               
               <CardFooter>
-                <Button type="submit">
+                <Button type="submit" loading={changePasswordMutation.isPending}>
                   <Save className="w-4 h-4 mr-2" />
                   Ubah Password
                 </Button>
@@ -216,27 +273,8 @@ export default function SettingsPage() {
               <CardTitle>Preferensi Notifikasi</CardTitle>
               <CardDescription>Kelola notifikasi yang Anda terima</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { id: 'email_transactions', label: 'Notifikasi Transaksi Email', desc: 'Kirim email untuk setiap transaksi baru' },
-                { id: 'email_weekly', label: 'Ringkasan Mingguan', desc: 'Kirim ringkasan keuangan setiap minggu' },
-                { id: 'email_monthly', label: 'Ringkasan Bulanan', desc: 'Kirim ringkasan keuangan setiap bulan' },
-                { id: 'push_budget', label: 'Peringatan Anggaran', desc: 'Notifikasi saat mendekati batas anggaran' },
-              ].map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="font-medium text-gray-900">{item.label}</p>
-                    <p className="text-sm text-gray-500">{item.desc}</p>
-                  </div>
-                  <button
-                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors"
-                    role="switch"
-                    aria-checked={false}
-                  >
-                    <span className="inline-block h-4 w-4 transform bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-              ))}
+            <CardContent>
+              <p className="text-gray-500 py-4">Segera hadir</p>
             </CardContent>
           </Card>
         )}
@@ -256,11 +294,56 @@ export default function SettingsPage() {
                 <p className="font-medium text-gray-900">Hapus Akun</p>
                 <p className="text-sm text-gray-500">Menghapus akun dan semua data Anda secara permanen</p>
               </div>
-              <Button variant="danger">Hapus Akun</Button>
+              <Button variant="danger" onClick={() => setIsDeleteModalOpen(true)}>
+                Hapus Akun
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Account Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeletePassword('');
+        }}
+        title="Hapus Akun"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Tindakan ini tidak bisa dibatalkan. Semua transaksi dan kategori Anda akan dihapus permanen.
+            Masukkan password Anda untuk melanjutkan.
+          </p>
+          <Input
+            label="Password"
+            type="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            placeholder="Masukkan password Anda"
+          />
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeletePassword('');
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              loading={deleteAccountMutation.isPending}
+              onClick={handleDeleteAccount}
+            >
+              Hapus Permanen
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </MainLayout>
   );
 }
