@@ -155,6 +155,15 @@ export const authApi = {
   }) => api.post<AuthResponse>('/auth/register/', data),
   
   me: () => api.get<AuthResponse['user']>('/auth/me/'),
+
+  updateMe: (data: Partial<Pick<AuthResponse['user'], 'first_name' | 'last_name' | 'username' | 'email'>>) =>
+    api.patch<AuthResponse['user']>('/auth/me/', data),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.post<AuthTokens>('/auth/change-password/', data),
+
+  deleteMe: (data: { password: string }) =>
+    api.delete('/auth/me/', { data }),
   
   logout: (refresh: string) =>
     api.post('/auth/logout/', { refresh }),
