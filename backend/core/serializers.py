@@ -47,6 +47,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         
         return attrs
 
+    def validate_email(self, value):
+        """Store email in lowercase and enforce case-insensitive uniqueness."""
+        value = value.lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('A user with that email already exists.')
+        return value
+
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(**validated_data)
@@ -64,6 +71,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        # Normalize email to lowercase before authenticating (A-06).
+        if self.username_field in attrs and attrs[self.username_field]:
+            attrs[self.username_field] = attrs[self.username_field].lower()
         data = super().validate(attrs)
         data['user'] = UserSerializer(self.user).data
         return data
