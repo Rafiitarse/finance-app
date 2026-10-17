@@ -273,27 +273,8 @@ export default function SettingsPage() {
               <CardTitle>Preferensi Notifikasi</CardTitle>
               <CardDescription>Kelola notifikasi yang Anda terima</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { id: 'email_transactions', label: 'Notifikasi Transaksi Email', desc: 'Kirim email untuk setiap transaksi baru' },
-                { id: 'email_weekly', label: 'Ringkasan Mingguan', desc: 'Kirim ringkasan keuangan setiap minggu' },
-                { id: 'email_monthly', label: 'Ringkasan Bulanan', desc: 'Kirim ringkasan keuangan setiap bulan' },
-                { id: 'push_budget', label: 'Peringatan Anggaran', desc: 'Notifikasi saat mendekati batas anggaran' },
-              ].map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="font-medium text-gray-900">{item.label}</p>
-                    <p className="text-sm text-gray-500">{item.desc}</p>
-                  </div>
-                  <button
-                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors"
-                    role="switch"
-                    aria-checked={false}
-                  >
-                    <span className="inline-block h-4 w-4 transform bg-white rounded-full transition-transform" />
-                  </button>
-                </div>
-              ))}
+            <CardContent>
+              <p className="text-gray-500 py-4">Segera hadir</p>
             </CardContent>
           </Card>
         )}
