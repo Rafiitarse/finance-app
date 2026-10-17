@@ -70,6 +70,26 @@ class MeView(APIView):
         serializer.save()
         return Response(UserSerializer(request.user).data)
 
+    def delete(self, request):
+        """Delete the authenticated user's account (password required)."""
+        password = request.data.get('password')
+        if not password:
+            return Response(
+                {'password': ['Password wajib diisi untuk menghapus akun.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not request.user.check_password(password):
+            return Response(
+                {'password': ['Password salah.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        with transaction.atomic():
+            # Transactions reference categories with PROTECT, so the user's
+            # transactions must go before the user itself.
+            Transaction.objects.filter(user=request.user).delete()
+            request.user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class ChangePasswordView(APIView):
     """Change password for the authenticated user; blacklists all refresh tokens."""
