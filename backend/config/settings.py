@@ -40,6 +40,18 @@ if not DEBUG and not ALLOWED_HOSTS:
 if DEBUG and not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
+# Security settings — safe defaults when DEBUG is off, overridable via env.
+# SECURE_HSTS_SECONDS defaults to 0 so the first deploy cannot lock anyone out;
+# raise it (e.g. 31536000) once HTTPS is confirmed end-to-end.
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', '1' if not DEBUG else '0') == '1'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', '1' if not DEBUG else '0') == '1'
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', '1' if not DEBUG else '0') == '1'
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', '0') == '1'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+if os.getenv('BEHIND_PROXY', '0') == '1':
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
