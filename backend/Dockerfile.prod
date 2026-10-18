@@ -1,0 +1,34 @@
+# Production image — non-root, gunicorn + WhiteNoise.
+# Migrations and seeding are NOT run here; they are release commands.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# collectstatic needs a settings import that passes the DEBUG=0 guards —
+# dummy values are only used for this build step.
+ENV DEBUG=0 \
+    SECRET_KEY=build-only-dummy-key-not-used-at-runtime-0123456789abcdef \
+    ALLOWED_HOSTS=localhost
+RUN python manage.py collectstatic --noinput
+
+RUN useradd --create-home --uid 1000 appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
