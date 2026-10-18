@@ -4,6 +4,7 @@ Core views - Authentication.
 from django.db import transaction
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -30,6 +31,8 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'auth'
+    throttle_classes = [ScopedRateThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -49,11 +52,14 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(TokenObtainPairView):
     """User login endpoint - returns access & refresh tokens + user data."""
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_scope = 'auth'
+    throttle_classes = [ScopedRateThrottle]
 
 
 class CustomTokenRefreshView(TokenRefreshView):
     """Token refresh with rotation."""
-    pass
+    throttle_scope = 'auth'
+    throttle_classes = [ScopedRateThrottle]
 
 
 class MeView(APIView):
@@ -94,6 +100,8 @@ class MeView(APIView):
 class ChangePasswordView(APIView):
     """Change password for the authenticated user; blacklists all refresh tokens."""
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope = 'auth'
+    throttle_classes = [ScopedRateThrottle]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
