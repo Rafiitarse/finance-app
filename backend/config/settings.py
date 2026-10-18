@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Load environment variables
 from dotenv import load_dotenv
 load_dotenv()
@@ -13,13 +15,30 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', '1') == '1'
+DEBUG = os.getenv('DEBUG', '0') == '1'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not DEBUG and (not SECRET_KEY or SECRET_KEY.startswith('django-insecure')):
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be set to a secure value (not starting with "django-insecure") '
+        'when DEBUG is off.'
+    )
+if not SECRET_KEY:
+    # Dev-only fallback — DEBUG is on in this branch.
+    SECRET_KEY = 'django-insecure-dev-key-change-in-production'
+
+# ALLOWED_HOSTS — strip entries, drop empties; fail fast in production.
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured('ALLOWED_HOSTS must be set explicitly when DEBUG is off.')
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
 # Application definition
 INSTALLED_APPS = [
