@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Plus, ChevronDown, Edit, Trash2, Download } from 'lucide-react';
+import { Search, Filter, Plus, Edit, Trash2 } from 'lucide-react';
 import { keepPreviousData } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Modal } from '@/components/ui/Modal';
+import { Card, CardContent } from '@/components/ui/Card';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useTransactions, useCategories, useDeleteTransaction } from '@/hooks/useApi';
@@ -15,7 +13,7 @@ import { formatCurrency, formatShortDate, TRANSACTION_TYPE_COLORS, getMonthOptio
 import { toastSuccess, toastError } from '@/hooks/useToast';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import type { Transaction, Category } from '@/types';
+import type { Transaction } from '@/types';
 
 export default function TransactionsPage() {
   const [search, setSearch] = useState('');
@@ -28,7 +26,6 @@ export default function TransactionsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
 
   // Debounce search so we don't fire a request on every keystroke
   useEffect(() => {
@@ -41,7 +38,7 @@ export default function TransactionsPage() {
     setPage(1);
   }, [debouncedSearch, typeFilter, categoryFilter, monthFilter, yearFilter]);
 
-  const { data: transactions, isLoading, refetch } = useTransactions(
+  const { data: transactions, isLoading } = useTransactions(
     {
       search: debouncedSearch || undefined,
       type: typeFilter || undefined,
@@ -62,7 +59,6 @@ export default function TransactionsPage() {
       try {
         await deleteMutation.mutateAsync(id);
         toastSuccess('Transaksi berhasil dihapus');
-        refetch();
       } catch {
         toastError('Gagal menghapus transaksi');
       }
@@ -70,13 +66,11 @@ export default function TransactionsPage() {
   };
 
   const openCreateForm = () => {
-    setIsEditMode(false);
     setSelectedTransaction(null);
     setIsFormOpen(true);
   };
 
   const openEditForm = (transaction: Transaction) => {
-    setIsEditMode(true);
     setSelectedTransaction(transaction);
     setIsFormOpen(true);
   };
@@ -84,10 +78,6 @@ export default function TransactionsPage() {
   const handleFormClose = () => {
     setIsFormOpen(false);
     setSelectedTransaction(null);
-  };
-
-  const handleFormSubmit = () => {
-    refetch();
   };
 
   return (

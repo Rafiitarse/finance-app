@@ -13,7 +13,6 @@ import { useTransactions, useTransactionSummary, useCategorySummary, useTransact
 import { formatCurrency, getMonthYear, getMonthOptions, getYearOptions, TRANSACTION_TYPE_COLORS } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 import { cn } from '@/lib/utils';
-import type { MonthlySummary, CategorySummary } from '@/types';
 
 export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
