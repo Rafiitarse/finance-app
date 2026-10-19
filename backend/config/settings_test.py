@@ -23,6 +23,12 @@ DATABASES = {
 
 DEBUG = False
 
+# Tests run over plain HTTP — disable SSL redirect and secure-cookie flags
+# so requests are not answered with 301s.
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
 # Use fast password hasher for tests
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
@@ -34,7 +40,18 @@ ALLOWED_HOSTS = ['*']
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
+    },
+}
+
+# Throttling: keep existing tests from interfering with each other —
+# the dedicated throttle test patches the rates itself.
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10000/min',
+        'user': '10000/min',
+        'auth': '10000/min',
+    },
 }
 
 # SimpleJWT test settings (shorter token lifetimes)

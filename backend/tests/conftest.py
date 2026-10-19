@@ -2,6 +2,7 @@
 Test configuration and fixtures.
 """
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 
@@ -9,6 +10,14 @@ from tests.factories import UserFactory, CategoryFactory, TransactionFactory
 
 
 User = get_user_model()
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Clear the throttle cache between tests (throttling uses the default cache)."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
