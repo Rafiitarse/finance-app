@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, SelectOption } from '@/components/ui/Select';
@@ -13,8 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useCategories } from '@/hooks/useApi';
 import { useCreateTransaction, useUpdateTransaction } from '@/hooks/useApi';
 import { toastSuccess, toastError } from '@/hooks/useToast';
-import type { Transaction, TransactionFormData, Category } from '@/types';
-import { cn } from '@/lib/utils';
+import type { Transaction } from '@/types';
 
 const transactionSchema = z.object({
   category_id: z
@@ -50,7 +48,6 @@ export function TransactionForm({ isOpen, onClose, initialData, defaultDate }: T
   const {
     register,
     handleSubmit,
-    setValue,
     reset,
     setError,
     formState: { errors, isSubmitting },

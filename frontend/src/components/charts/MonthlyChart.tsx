@@ -2,7 +2,6 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { cn } from '@/lib/utils';
-import type { MonthlySummary } from '@/types';
 
 interface MonthlyChartProps {
   data: Array<{ month: string; income: number; expense: number }>;

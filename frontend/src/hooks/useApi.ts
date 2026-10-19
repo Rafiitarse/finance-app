@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@ta
 import { useEffect } from 'react';
 import { authApi, categoriesApi, transactionsApi, setTokens, getRefreshToken, clearTokens } from '@/lib/api';
 import type { AxiosResponse } from 'axios';
-import type { Category, Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse, User } from '@/types';
+import type { Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse, User } from '@/types';
 import { useAuthStore } from '@/lib/store';
 
 // Auth Hooks

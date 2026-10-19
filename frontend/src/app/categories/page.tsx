@@ -3,25 +3,21 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Modal } from '@/components/ui/Modal';
+import { Card, CardContent } from '@/components/ui/Card';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CategoryForm } from '@/components/forms/CategoryForm';
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useApi';
+import { useCategories, useDeleteCategory } from '@/hooks/useApi';
 import { toastSuccess, toastError } from '@/hooks/useToast';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 import type { Category } from '@/types';
 
 export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'income' | 'expense'>('expense');
   
-  const { data: categories, isLoading, refetch } = useCategories();
-  const createMutation = useCreateCategory();
-  const updateMutation = useUpdateCategory();
+  const { data: categories, isLoading } = useCategories();
   const deleteMutation = useDeleteCategory();
 
   const incomeCategories = categories?.filter((c) => c.type === 'income') || [];
@@ -37,7 +33,6 @@ export default function CategoriesPage() {
       try {
         await deleteMutation.mutateAsync(id);
         toastSuccess('Kategori berhasil dihapus');
-        refetch();
       } catch (error: unknown) {
         const err = error as { response?: { status?: number; data?: { detail?: string } } };
         if (err.response?.status === 409 && err.response.data?.detail) {
@@ -52,7 +47,6 @@ export default function CategoriesPage() {
   };
 
   const openCreateForm = () => {
-    setIsEditMode(false);
     setSelectedCategory(null);
     setIsFormOpen(true);
   };
@@ -62,7 +56,6 @@ export default function CategoriesPage() {
       toastError('Kategori default tidak bisa diedit');
       return;
     }
-    setIsEditMode(true);
     setSelectedCategory(category);
     setIsFormOpen(true);
   };
@@ -154,7 +147,7 @@ export default function CategoriesPage() {
                           )}
                         </div>
                         <p className="text-sm text-gray-500">
-                          {category.transaction_count} transaksi • {category.total_amount ? `Rp${parseFloat(category.total_amount).toLocaleString('id-ID')}` : 'Rp0'}
+                          {category.transaction_count} transaksi • {formatCurrency(category.total_amount || 0)}
                         </p>
                       </div>
                     </div>

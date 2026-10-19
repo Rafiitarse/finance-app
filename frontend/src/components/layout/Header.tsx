@@ -4,15 +4,13 @@ import { useState, Fragment } from 'react';
 import { Menu, LogOut, User, ChevronDown } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
 import { useAuthStore, useUIStore } from '@/lib/store';
 import { useLogout } from '@/hooks/useApi';
-import { cn } from '@/lib/utils';
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout: clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const logoutMutation = useLogout();
