@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { authApi, categoriesApi, transactionsApi, setTokens, getRefreshToken, clearTokens } from '@/lib/api';
+import { authApi, categoriesApi, transactionsApi } from '@/lib/api';
 import type { AxiosResponse } from 'axios';
 import type { Transaction, CategoryFormData, TransactionFormData, TransactionFilters, SummaryFilters, PaginatedResponse, User } from '@/types';
 import { useAuthStore } from '@/lib/store';
@@ -14,9 +14,8 @@ export function useLogin() {
     mutationFn: ({ email, password }: { email: string; password: string }) => 
       authApi.login(email, password),
     onSuccess: (data) => {
-      const { access, refresh, user } = data.data;
-      setTokens({ access, refresh });
-      setUser(user);
+      // Tokens live in HttpOnly cookies set by the route handler.
+      setUser(data.data.user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
@@ -36,9 +35,7 @@ export function useRegister() {
       last_name?: string;
     }) => authApi.register(data),
     onSuccess: (data) => {
-      const { access, refresh, user } = data.data;
-      setTokens({ access, refresh });
-      setUser(user);
+      setUser(data.data.user);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
@@ -59,13 +56,10 @@ export function useUpdateProfile() {
 }
 
 export function useChangePassword() {
+  // The route handler rotates the HttpOnly cookies server-side.
   return useMutation({
     mutationFn: (data: { current_password: string; new_password: string }) =>
       authApi.changePassword(data),
-    onSuccess: (response) => {
-      const { access, refresh } = response.data;
-      setTokens({ access, refresh });
-    },
   });
 }
 
@@ -76,7 +70,7 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: (data: { password: string }) => authApi.deleteMe(data),
     onSuccess: () => {
-      clearTokens();
+      // Cookies were cleared server-side by the route handler.
       queryClient.clear();
       logout();
     },
@@ -89,18 +83,14 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      const refresh = getRefreshToken();
-      if (refresh) {
-        try {
-          await authApi.logout(refresh);
-        } catch {
-          // Swallow server/network errors - we still clear locally
-        }
+      try {
+        // The route handler clears the HttpOnly cookies server-side.
+        await authApi.logout();
+      } catch {
+        // Swallow server/network errors - we still clear locally
       }
     },
     onSettled: () => {
-      // Always clear local state regardless of server outcome
-      clearTokens();
       logout();
       queryClient.clear();
     },
@@ -113,7 +103,9 @@ export function useUser() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['user'],
     queryFn: () => authApi.me(),
-    enabled: isAuthenticated && !user,
+    // With HttpOnly cookies the client cannot check cookie presence, so the
+    // session is always validated with the server when no user is in the store.
+    enabled: !user,
     retry: false,
   });
 
