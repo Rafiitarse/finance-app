@@ -2,6 +2,12 @@
 
 A full-stack personal finance management application built with Django REST Framework (backend) and Next.js (frontend).
 
+## Project Status
+
+This project is **not deployed** and has no live demo. It is a portfolio/learning
+project that runs fully locally via Docker Compose (see [Getting Started](#getting-started)).
+The deployment notes below describe a plan and have **not been tested in production**.
+
 ## Tech Stack
 
 ### Backend
@@ -23,9 +29,11 @@ A full-stack personal finance management application built with Django REST Fram
 - **Recharts** - Data visualization
 - **Vitest 5** - Unit tests (`lib/utils`)
 
-### Deployment
-- **Vercel** - Frontend hosting
-- **Railway/Render** - Backend hosting (gunicorn + WhiteNoise; MySQL)
+### Deployment (planned, not deployed)
+- **Frontend:** Vercel (Next.js)
+- **Backend:** Any container host with gunicorn + WhiteNoise (e.g. Render)
+- **Database:** Managed MySQL 8
+
 
 ## Features
 
@@ -186,20 +194,9 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 - `GET /api/transactions/summary/` - Monthly summary (invalid year/month → 400)
 - `GET /api/transactions/trend/` - 6-month trend (`?months=1..24&year=&month=`, zero-filled, Jakarta timezone)
 
-## Deployment
+## Deployment (untested plan)
 
-### Backend (Railway/Render)
-1. Connect GitHub repository
-2. Add MySQL database
-3. Set environment variables (`DEBUG=0`, secure `SECRET_KEY`, `ALLOWED_HOSTS`, DB values, `BEHIND_PROXY=1` behind the platform proxy)
-4. Deploy — the production image (`Dockerfile.prod`) runs gunicorn with WhiteNoise; migrations and seeding run as release commands
-
-Periodic cleanup: `python manage.py flushexpiredtokens` removes expired blacklisted tokens.
-
-### Frontend (Vercel)
-1. Import GitHub repository
-2. Set `NEXT_PUBLIC_API_URL` to production backend URL
-3. Deploy
+> These steps are a plan, not a record of a real deployment. Expect to adjust them.
 
 ## Security Notes
 
